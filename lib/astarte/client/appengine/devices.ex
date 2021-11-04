@@ -32,14 +32,49 @@ defmodule Astarte.Client.AppEngine.Devices do
     end
   end
 
-  def get_properties_data(%AppEngine{} = client, device_id, interface, query_opts \\ [])
+  def get_properties_data(%AppEngine{} = client, device_id, interface, opts \\ [])
       when is_binary(device_id) and is_binary(interface) do
     tesla_client = client.http_client
-    request_path = "devices/#{device_id}/interfaces/#{interface}"
+    query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path, query: query_opts) do
+    request_path =
+      if path = opts[:path] do
+        "devices/#{device_id}/interfaces/#{interface}#{path}"
+      else
+        "devices/#{device_id}/interfaces/#{interface}"
+      end
+
+    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path, query: query) do
       if result.status == 200 do
         {:ok, result.body}
+      else
+        {:error, %APIError{status: result.status, response: result.body}}
+      end
+    end
+  end
+
+  def set_property(%AppEngine{} = client, device_id, interface, path, data)
+      when is_binary(device_id) and is_binary(interface) and is_binary(path) do
+    tesla_client = client.http_client
+    request_path = "devices/#{device_id}/interfaces/#{interface}/#{path}"
+
+    with {:ok, %Tesla.Env{} = result} <- Tesla.put(tesla_client, request_path, %{data: data}) do
+      if result.status == 200 do
+        :ok
+      else
+        {:error, %APIError{status: result.status, response: result.body}}
+      end
+    end
+  end
+
+  def unset_property(%AppEngine{} = client, device_id, interface, path)
+      when is_binary(device_id) and is_binary(interface) and is_binary(path) do
+    tesla_client = client.http_client
+    request_path = "devices/#{device_id}/interfaces/#{interface}/#{path}"
+
+    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
+      if result.status == 200 do
+        :ok
       else
         {:error, %APIError{status: result.status, response: result.body}}
       end
@@ -54,6 +89,20 @@ defmodule Astarte.Client.AppEngine.Devices do
     with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path, query: query_opts) do
       if result.status == 200 do
         {:ok, result.body}
+      else
+        {:error, %APIError{status: result.status, response: result.body}}
+      end
+    end
+  end
+
+  def send_datastream(%AppEngine{} = client, device_id, interface, path, data)
+      when is_binary(device_id) and is_binary(interface) and is_binary(path) do
+    tesla_client = client.http_client
+    request_path = "devices/#{device_id}/interfaces/#{interface}/#{path}"
+
+    with {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
+      if result.status == 200 do
+        :ok
       else
         {:error, %APIError{status: result.status, response: result.body}}
       end
