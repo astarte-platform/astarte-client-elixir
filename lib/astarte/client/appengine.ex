@@ -24,29 +24,42 @@ defmodule Astarte.Client.AppEngine do
           http_client: Tesla.Client.t()
         }
 
-  alias Astarte.Client.AppEngine
+  alias __MODULE__
   alias Astarte.Client.Credentials
 
   @jwt_expiry 5 * 60
 
-  @spec new(String.t(), String.t(), String.t()) :: {:ok, t()} | {:error, any}
-  def new(base_api_url, realm_name, private_key) do
-    base_url = Path.join([base_api_url, "appengine", "v1", realm_name])
-    credentials = Credentials.appengine_all_access_credentials(expiry: @jwt_expiry)
+  @spec new(String.t(), String.t(), Keyword.t()) :: {:ok, t()} | {:error, any}
+  def new(base_api_url, realm_name, opts)
+      when is_binary(base_api_url) and is_binary(realm_name) and is_list(opts) do
+    with {:ok, jwt} <- fetch_jwt(opts) do
+      base_url = Path.join([base_api_url, "appengine", "v1", realm_name])
 
-    case Credentials.to_jwt(credentials, private_key) do
-      {:ok, jwt} ->
-        middleware = [
-          {Tesla.Middleware.BaseUrl, base_url},
-          Tesla.Middleware.JSON,
-          {Tesla.Middleware.Headers, [{"Authorization", "Bearer: " <> jwt}]}
-        ]
+      middleware = [
+        {Tesla.Middleware.BaseUrl, base_url},
+        Tesla.Middleware.JSON,
+        {Tesla.Middleware.Headers, [{"Authorization", "Bearer: " <> jwt}]}
+      ]
 
-        http_client = Tesla.client(middleware)
-        {:ok, %AppEngine{http_client: http_client}}
-
-      {:error, reason} ->
-        {:error, reason}
+      http_client = Tesla.client(middleware)
+      {:ok, %AppEngine{http_client: http_client}}
     end
+  end
+
+  defp fetch_jwt(opts) do
+    with :error <- Keyword.fetch(opts, :jwt) do
+      opts
+      |> Keyword.get(:private_key)
+      |> generate_jwt()
+    end
+  end
+
+  defp generate_jwt(nil = _private_key) do
+    {:error, :missing_jwt_and_private_key}
+  end
+
+  defp generate_jwt(private_key) when is_binary(private_key) do
+    Credentials.appengine_all_access_credentials(expiry: @jwt_expiry)
+    |> Credentials.to_jwt(private_key)
   end
 end
