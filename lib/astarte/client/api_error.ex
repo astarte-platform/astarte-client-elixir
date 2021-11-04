@@ -16,4 +16,7 @@
 # limitations under the License.
 #
 
-ExUnit.start()
+defmodule Astarte.Client.APIError do
+  @enforce_keys [:status, :response]
+  defstruct @enforce_keys
+end
