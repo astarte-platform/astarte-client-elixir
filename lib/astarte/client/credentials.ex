@@ -24,6 +24,14 @@ defmodule Astarte.Client.Credentials do
 
   alias __MODULE__
 
+  require Record
+
+  # Create an :ec_private_key record to easily extract the curve parameters from EC keys
+  Record.defrecordp(
+    :ec_private_key,
+    Record.extract(:ECPrivateKey, from_lib: "public_key/include/public_key.hrl")
+  )
+
   @api_all_access_claim_value ".*::.*"
   @default_expiry 5 * 60
 
@@ -160,10 +168,21 @@ defmodule Astarte.Client.Credentials do
 
   defp signing_algorithm(private_key) do
     case X509.PrivateKey.from_pem(private_key) do
-      {:ok, key} when elem(key, 0) == :ECPrivateKey ->
-        {:ok, "ES256"}
+      {:ok, key} when Record.is_record(key, :ECPrivateKey) ->
+        case ec_private_key(key, :parameters) do
+          # secp256r1 curve
+          {:namedCurve, {1, 2, 840, 10045, 3, 1, 7}} ->
+            {:ok, "ES256"}
 
-      {:ok, key} when elem(key, 0) == :RSAPrivateKey ->
+          # secp384r1 curve
+          {:namedCurve, {1, 3, 132, 0, 34}} ->
+            {:ok, "ES384"}
+
+          _ ->
+            {:error, :unsupported_private_key}
+        end
+
+      {:ok, key} when Record.is_record(key, :RSAPrivateKey) ->
         {:ok, "RS256"}
 
       _ ->
