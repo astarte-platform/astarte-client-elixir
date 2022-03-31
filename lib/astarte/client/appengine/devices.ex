@@ -73,7 +73,7 @@ defmodule Astarte.Client.AppEngine.Devices do
     request_path = "devices/#{device_id}/interfaces/#{interface}#{path}"
 
     with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
-      if result.status == 200 do
+      if result.status == 204 do
         :ok
       else
         {:error, %APIError{status: result.status, response: result.body}}
