@@ -60,11 +60,13 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
     end
   end
 
-  def create(%RealmManagement{} = client, data) do
+  def create(%RealmManagement{} = client, data, opts \\ []) do
     request_path = "interfaces"
     tesla_client = client.http_client
+    query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
+    with {:ok, %Tesla.Env{} = result} <-
+           Tesla.post(tesla_client, request_path, %{data: data}, query: query) do
       if result.status == 201 do
         :ok
       else
@@ -89,12 +91,13 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
     end
   end
 
-  def delete(%RealmManagement{} = client, interface_name, major_version)
+  def delete(%RealmManagement{} = client, interface_name, major_version, opts \\ [])
       when is_binary(interface_name) and is_integer(major_version) do
     request_path = "interfaces/#{interface_name}/#{major_version}"
     tesla_client = client.http_client
+    query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
+    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path, query: query) do
       if result.status == 204 do
         :ok
       else
