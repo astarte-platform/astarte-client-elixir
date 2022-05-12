@@ -165,7 +165,7 @@ defmodule Astarte.Client.RealmManagement.InterfacesTest do
     end
   end
 
-  describe "create/2" do
+  describe "create" do
     test "makes a request to expected url using expected method", %{client: client} do
       Tesla.Mock.mock(fn %{method: method, url: url} ->
         assert method == :post
@@ -175,6 +175,18 @@ defmodule Astarte.Client.RealmManagement.InterfacesTest do
       end)
 
       Interfaces.create(client, @interface_data)
+    end
+
+    test "makes a request that includes expected query params", %{client: client} do
+      query_params = [param1: 1, param2: 2]
+
+      Tesla.Mock.mock(fn %{query: query} ->
+        assert query == query_params
+
+        %Tesla.Env{status: 201}
+      end)
+
+      Interfaces.create(client, @interface_data, query: query_params)
     end
 
     test "returns :ok if response is successful", %{client: client} do
@@ -196,7 +208,7 @@ defmodule Astarte.Client.RealmManagement.InterfacesTest do
     end
   end
 
-  describe "update/5" do
+  describe "update" do
     test "makes a request to expected url using expected method", %{client: client} do
       Tesla.Mock.mock(fn %{method: method, url: url} ->
         assert method == :put
@@ -239,7 +251,7 @@ defmodule Astarte.Client.RealmManagement.InterfacesTest do
     end
   end
 
-  describe "delete/2" do
+  describe "delete" do
     test "makes a request to expected url using expected method", %{client: client} do
       Tesla.Mock.mock(fn %{method: method, url: url} ->
         assert method == :delete
@@ -249,6 +261,18 @@ defmodule Astarte.Client.RealmManagement.InterfacesTest do
       end)
 
       Interfaces.delete(client, @interface_name, 0)
+    end
+
+    test "makes a request that includes expected query params", %{client: client} do
+      query_params = [param1: 1, param2: 2]
+
+      Tesla.Mock.mock(fn %{query: query} ->
+        assert query == query_params
+
+        %Tesla.Env{status: 201}
+      end)
+
+      Interfaces.delete(client, @interface_name, 0, query: query_params)
     end
 
     test "returns :ok if response is successful", %{client: client} do
