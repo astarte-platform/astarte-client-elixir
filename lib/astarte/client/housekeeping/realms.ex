@@ -32,10 +32,21 @@ defmodule Astarte.Client.Housekeeping.Realms do
     end
   end
 
+  @doc """
+  Creates a new realm.
+
+  ## Examples
+
+    Astarte.Client.Housekeeping.Realms.create(client, realm_name, public_key_pem)
+
+    Astarte.Client.Housekeeping.Realms.create(client, realm_name, public_key_pem, query: [async_operation: false])
+
+  """
   def create(%Housekeeping{} = client, realm_name, public_key_pem, opts)
       when is_binary(realm_name) and is_binary(public_key_pem) and is_list(opts) do
     request_path = "realms"
     tesla_client = client.http_client
+    query = Keyword.get(opts, :query, [])
 
     data = %{
       realm_name: realm_name,
@@ -45,7 +56,7 @@ defmodule Astarte.Client.Housekeeping.Realms do
     with {:ok, replication_data} <- fetch_replication(opts),
          realm_data = Map.merge(data, replication_data),
          {:ok, %Tesla.Env{} = result} <-
-           Tesla.post(tesla_client, request_path, %{data: realm_data}) do
+           Tesla.post(tesla_client, request_path, %{data: realm_data}, query: query) do
       if result.status == 201 do
         :ok
       else
@@ -112,11 +123,22 @@ defmodule Astarte.Client.Housekeeping.Realms do
     end
   end
 
-  def delete(%Housekeeping{} = client, realm_name) when is_binary(realm_name) do
+  @doc """
+  Deletes a realm.
+
+  ## Examples
+
+    Astarte.Client.Housekeeping.Realms.delete(client, realm_name)
+
+    Astarte.Client.Housekeeping.Realms.delete(client, realm_name, query: [async_operation: false])
+
+  """
+  def delete(%Housekeeping{} = client, realm_name, opts \\ []) when is_binary(realm_name) do
     request_path = "realms/#{realm_name}"
     tesla_client = client.http_client
+    query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
+    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path, query: query) do
       if result.status == 204 do
         :ok
       else
