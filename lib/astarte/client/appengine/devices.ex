@@ -18,9 +18,34 @@
 
 defmodule Astarte.Client.AppEngine.Devices do
   alias Astarte.Client.{APIError, AppEngine}
+  alias Astarte.Client.AppEngine.Pagination
+
+  @doc """
+
+  ## Examples
+  Astarte.Client.AppEngine.Devices.list(client)
+
+  Astarte.Client.AppEngine.Devices.list(client, query: [details: true])
+  """
+  def list(%AppEngine{} = client, opts \\ []) do
+    Pagination.list(client, "devices", opts)
+  end
 
   def get_device_status(%AppEngine{} = client, device_id) when is_binary(device_id) do
     request_path = "devices/#{device_id}"
+    tesla_client = client.http_client
+
+    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+      if result.status == 200 do
+        {:ok, result.body}
+      else
+        {:error, %APIError{status: result.status, response: result.body}}
+      end
+    end
+  end
+
+  def get_device_interfaces(%AppEngine{} = client, device_id) do
+    request_path = "devices/#{device_id}/interfaces"
     tesla_client = client.http_client
 
     with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do

@@ -40,6 +40,7 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
   @sensors_data %{
     "#{@sensor_path}" => @sensor_data
   }
+  @device_interfaces [@sensors_interface]
 
   @sensors_stream_interface "org.astarte-platform.genericsensors.Values"
   @sensor_stream_last_data %{
@@ -65,6 +66,112 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
     {:ok, %AppEngine{} = client} = AppEngine.new(@base_url, @realm_name, jwt: @jwt)
 
     {:ok, client: client}
+  end
+
+  describe "list/2" do
+    test "makes a request to expected url using expected method", %{client: client} do
+      Tesla.Mock.mock(fn %{method: method, url: url} ->
+        assert method == :get
+        assert url == build_device_url()
+
+        Tesla.Mock.json(
+          %{"data" => []},
+          status: 200
+        )
+      end)
+
+      Devices.list(client)
+    end
+
+    test "passes query parameters", %{client: client} do
+      query_opts = [details: true]
+
+      Tesla.Mock.mock(fn %{query: query} ->
+        assert query == query_opts
+
+        Tesla.Mock.json(
+          %{"data" => []},
+          status: 200
+        )
+      end)
+
+      Devices.list(client, query: query_opts)
+    end
+
+    test "returns list of existing devices", %{client: client} do
+      Tesla.Mock.mock(fn %{query: query} ->
+        {from_token, _} = Integer.parse(Keyword.get(query, :from_token, "0"))
+
+        if from_token >= 3 do
+          Tesla.Mock.json(
+            %{
+              "data" => [random_device_id(), random_device_id()],
+              "links" => %{
+                "self" => "/v1/#{@realm_name}/devices?from_token=#{from_token}"
+              }
+            },
+            status: 200
+          )
+        else
+          Tesla.Mock.json(
+            %{
+              "data" => [random_device_id(), random_device_id()],
+              "links" => %{
+                "self" => "/v1/#{@realm_name}/devices?from_token=#{from_token}",
+                "next" => "/v1/#{@realm_name}/devices?from_token=#{from_token + 1}"
+              }
+            },
+            status: 200
+          )
+        end
+      end)
+
+      assert {:ok, %{"data" => devices}} = Devices.list(client)
+      assert length(devices) == 8
+    end
+
+    test "returns empty list", %{client: client} do
+      Tesla.Mock.mock(fn _ ->
+        Tesla.Mock.json(
+          %{
+            "data" => [],
+            "links" => %{
+              "self" => "/v1/#{@realm_name}/devices"
+            }
+          },
+          status: 200
+        )
+      end)
+
+      assert {:ok, %{"data" => []}} == Devices.list(client)
+    end
+
+    test "retuns APIError on error", %{client: client} do
+      error_data = %{"errors" => %{"detail" => "Forbidden"}}
+      error_status = 403
+
+      Tesla.Mock.mock(fn %{query: query} ->
+        {from_token, _} = Integer.parse(Keyword.get(query, :from_token, "0"))
+
+        if from_token >= 3 do
+          Tesla.Mock.json(error_data, status: error_status)
+        else
+          Tesla.Mock.json(
+            %{
+              "data" => [random_device_id(), random_device_id()],
+              "links" => %{
+                "self" => "/v1/#{@realm_name}/devices?from_token=#{from_token}",
+                "next" => "/v1/#{@realm_name}/devices?from_token=#{from_token + 1}"
+              }
+            },
+            status: 200
+          )
+        end
+      end)
+
+      assert {:error, %APIError{response: error_data, status: error_status}} ==
+               Devices.list(client)
+    end
   end
 
   describe "get_device_status/2" do
@@ -105,6 +212,44 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
     end
   end
 
+  describe "get_device_interfaces/2" do
+    test "makes a request to expected url using expected method", %{client: client} do
+      Tesla.Mock.mock(fn %{method: method, url: url} ->
+        assert method == :get
+        assert url == build_interface_url(@device_id)
+
+        Tesla.Mock.json(
+          %{"data" => @device_interfaces},
+          status: 200
+        )
+      end)
+
+      Devices.get_device_interfaces(client, @device_id)
+    end
+
+    test "returns data from successful response", %{client: client} do
+      device_interfaces_data = %{"data" => @device_interfaces}
+
+      Tesla.Mock.mock(fn _ ->
+        Tesla.Mock.json(device_interfaces_data, status: 200)
+      end)
+
+      assert {:ok, device_interfaces_data} == Devices.get_device_interfaces(client, @device_id)
+    end
+
+    test "returns APIError on error", %{client: client} do
+      error_data = %{"errors" => %{"detail" => "Forbidden"}}
+      error_status = 403
+
+      Tesla.Mock.mock(fn _ ->
+        Tesla.Mock.json(error_data, status: error_status)
+      end)
+
+      assert {:error, %APIError{response: error_data, status: error_status}} ==
+               Devices.get_device_interfaces(client, @device_id)
+    end
+  end
+
   describe "get_properties_data/3" do
     test "makes a request to expected url using expected method", %{client: client} do
       Tesla.Mock.mock(fn %{method: method, url: url} ->
@@ -121,15 +266,14 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
     end
 
     test "returns data from successful response", %{client: client} do
+      sensors_data = %{"data" => @sensors_data}
+
       Tesla.Mock.mock(fn _ ->
-        Tesla.Mock.json(
-          %{"data" => @sensors_data},
-          status: 200
-        )
+        Tesla.Mock.json(sensors_data, status: 200)
       end)
 
-      assert {:ok, body} = Devices.get_properties_data(client, @device_id, @sensors_interface)
-      assert body["data"] == @sensors_data
+      assert {:ok, sensors_data} ==
+               Devices.get_properties_data(client, @device_id, @sensors_interface)
     end
 
     test "returns APIError on error", %{client: client} do
@@ -161,19 +305,16 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
     end
 
     test "returns data from successful response", %{client: client} do
+      sensor_data = %{"data" => @sensor_data}
+
       Tesla.Mock.mock(fn _ ->
-        Tesla.Mock.json(
-          %{"data" => @sensor_data},
-          status: 200
-        )
+        Tesla.Mock.json(sensor_data, status: 200)
       end)
 
-      assert {:ok, body} =
+      assert {:ok, sensor_data} ==
                Devices.get_properties_data(client, @device_id, @sensors_interface,
                  path: @sensor_path
                )
-
-      assert body["data"] == @sensor_data
     end
 
     test "returns APIError on error", %{client: client} do
@@ -460,11 +601,11 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
     end
   end
 
-  defp build_device_url(device_id) do
+  defp build_device_url(device_id \\ "") do
     Path.join([@base_url, "appengine", "v1", @realm_name, "devices", device_id])
   end
 
-  defp build_interface_url(device_id, interface, opts \\ []) do
+  defp build_interface_url(device_id, interface \\ "", opts \\ []) do
     path = Keyword.get(opts, :path, "")
 
     Path.join([
@@ -472,5 +613,12 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
       "interfaces",
       interface
     ]) <> path
+  end
+
+  defp random_device_id do
+    <<u0::48, _::4, u1::12, _::2, u2::62>> = :crypto.strong_rand_bytes(16)
+
+    <<u0::48, 4::4, u1::12, 2::2, u2::62>>
+    |> Base.url_encode64(padding: false)
   end
 end
