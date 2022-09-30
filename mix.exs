@@ -1,13 +1,18 @@
 defmodule Astarte.Client.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/astarte-platform/astarte-client-elixir"
+  @version "0.1.0"
+
   def project do
     [
       app: :astarte_client,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      source_url: @source_url,
+      docs: docs(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
@@ -18,7 +23,6 @@ defmodule Astarte.Client.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger],
@@ -26,7 +30,6 @@ defmodule Astarte.Client.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:tesla, "~> 1.4"},
@@ -35,7 +38,15 @@ defmodule Astarte.Client.MixProject do
       {:joken, "~> 2.4"},
       {:x509, "~> 0.8"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.10", only: :test},
+      {:ex_doc, "~> 0.27", only: :dev, runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: ["README.md"]
     ]
   end
 end
