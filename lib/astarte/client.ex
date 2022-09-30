@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2022 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,5 @@
 #
 
 defmodule Astarte.Client do
-  @moduledoc """
-  Documentation for `Astarte.Client`.
-  """
+  @moduledoc false
 end
