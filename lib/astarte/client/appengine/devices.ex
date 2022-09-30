@@ -20,28 +20,32 @@ defmodule Astarte.Client.AppEngine.Devices do
   @moduledoc """
   Module to interact with devices, send and receive data.
   """
+  @moduledoc since: "0.1.0"
 
   alias Astarte.Client.{APIError, AppEngine}
   alias Astarte.Client.AppEngine.Pagination
 
   @doc """
-  Returns list of all devices.
+  Returns the list of all devices.
 
   By default the device ID string is returned for each already registered device.
   The complete device status can be optionally retrieved rather than device ID string using details option.
 
   ## Options
+
     * `:query` - list of query params
 
   ## Query options
+
     * `:details` - what data to return for every device. The possible values are:
       * `false` (default) - return device ID only
       * `true` - return detailed device status
 
   ## Examples
-    Astarte.Client.AppEngine.Devices.list(client)
 
-    Astarte.Client.AppEngine.Devices.list(client, query: [details: true])
+      Astarte.Client.AppEngine.Devices.list(client)
+
+      Astarte.Client.AppEngine.Devices.list(client, query: [details: true])
 
   """
   @doc since: "0.1.0"
@@ -55,7 +59,9 @@ defmodule Astarte.Client.AppEngine.Devices do
   Overview includes an array of reported interfaces (introspection), offline/online status, etc.
 
   ## Examples
-    Astarte.Client.AppEngine.Devices.get_device_status(client, "hm8AjtbN5P2mxo_gfXSfvQ")
+
+      Astarte.Client.AppEngine.Devices.get_device_status(client, "hm8AjtbN5P2mxo_gfXSfvQ")
+
   """
   @doc since: "0.1.0"
   def get_device_status(%AppEngine{} = client, device_id) when is_binary(device_id) do
@@ -79,7 +85,9 @@ defmodule Astarte.Client.AppEngine.Devices do
   same applies for older versions of a certain interface.
 
   ## Examples
-    Astarte.Client.AppEngine.Devices.get_device_interfaces(client, "hm8AjtbN5P2mxo_gfXSfvQ")
+
+      Astarte.Client.AppEngine.Devices.get_device_interfaces(client, "hm8AjtbN5P2mxo_gfXSfvQ")
+
   """
   @doc since: "0.1.0"
   def get_device_interfaces(%AppEngine{} = client, device_id) when is_binary(device_id) do
@@ -100,8 +108,11 @@ defmodule Astarte.Client.AppEngine.Devices do
   returns a value on a given endpoint path.
 
   ## Options
+
     * `:path`  - endpoint path
+
     * `:query` - list of query params
+
   """
   @doc since: "0.1.0"
   def get_properties_data(%AppEngine{} = client, device_id, interface, opts \\ [])
@@ -169,21 +180,30 @@ defmodule Astarte.Client.AppEngine.Devices do
   Returns values for a given datastream interface.
 
   ## Options
+
     * `:path` - endpoint path
+
     * `:query` - list of query params
 
   ## Query options
     * `:since` - query all values since a certain timestamp (all entries where timestamp >= `:since`).
-    It must be a ISO 8601 valid timestamp. This option is mutually exclusive with `:since_after`.
+    It must be a ISO 8601 valid timestamp.
+    This option is mutually exclusive with `:since_after`.
+
     * `:since_after` - query all values since after a certain timestamp (all entries where timestamp > `:since_after`).
-    It must be a ISO 8601 valid timestamp. This option is mutually exclusive with `:since`.
+    It must be a ISO 8601 valid timestamp.
+    This option is mutually exclusive with `:since`.
+
     * `:to` - query all values up to a certain timestamp.
-    It must be a ISO 8601 valid timestamp. If `:since` and `:since_after` are not specified first entry date is assumed by default.
+    It must be a ISO 8601 valid timestamp.
+    If `:since` and `:since_after` are not specified first entry date is assumed by default.
+
     * `:limit` - limit number of retrieved data production entries to `:limit`.
     This parameter must be always specified when `:since`, `:since_after` and `:to` query parameters are used.
     If limit is specified without `:since`, `:since_after` and `:to` parameters, last `:limit` values are retrieved.
     When `:limit` entries are returned, it should be checked if any other entry is left by using `:since_after` the last received timestamp.
     An error is returned if `:limit` exceeds maximum allowed value.
+
   """
   @doc since: "0.1.0"
   def get_datastream_data(%AppEngine{} = client, device_id, interface, opts \\ [])
