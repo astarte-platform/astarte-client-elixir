@@ -46,7 +46,31 @@ defmodule Astarte.Client.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"]
+      extras: ["README.md"],
+      groups_for_modules: groups_for_modules(),
+      nest_modules_by_prefix: nest_modules_by_prefix()
+    ]
+  end
+
+  defp groups_for_modules do
+    [
+      AppEngine: ~r/^Astarte\.Client\.AppEngine/,
+      Housekeeping: ~r/^Astarte\.Client\.Housekeeping/,
+      Pairing: ~r/^Astarte\.Client\.Pairing/,
+      RealmManagement: ~r/^Astarte\.Client\.RealmManagement/,
+      Utilities: [
+        Astarte.Client.Credentials,
+        Astarte.Client.APIError
+      ]
+    ]
+  end
+
+  defp nest_modules_by_prefix do
+    [
+      Astarte.Client.AppEngine,
+      Astarte.Client.Housekeeping,
+      Astarte.Client.Pairing,
+      Astarte.Client.RealmManagement
     ]
   end
 end
