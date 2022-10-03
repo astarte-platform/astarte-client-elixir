@@ -171,7 +171,7 @@ defmodule Astarte.Client.Credentials do
       {:ok, key} when Record.is_record(key, :ECPrivateKey) ->
         case ec_private_key(key, :parameters) do
           # secp256r1 curve
-          {:namedCurve, {1, 2, 840, 10045, 3, 1, 7}} ->
+          {:namedCurve, {1, 2, 840, 10_045, 3, 1, 7}} ->
             {:ok, "ES256"}
 
           # secp384r1 curve
