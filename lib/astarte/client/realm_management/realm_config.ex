@@ -17,8 +17,17 @@
 #
 
 defmodule Astarte.Client.RealmManagement.RealmConfig do
+  @moduledoc """
+  Module to configure the global behavior of the Realm and how it can be accessed.
+  """
+  @moduledoc since: "0.1.0"
+
   alias Astarte.Client.{APIError, RealmManagement}
 
+  @doc """
+  Returns the auth configuration of the realm.
+  """
+  @doc since: "0.1.0"
   def get_auth_config(%RealmManagement{} = client) do
     request_path = "config/auth"
     tesla_client = client.http_client
@@ -32,6 +41,10 @@ defmodule Astarte.Client.RealmManagement.RealmConfig do
     end
   end
 
+  @doc """
+  Installs an auth configuration for the realm.
+  """
+  @doc since: "0.1.0"
   def set_auth_config(%RealmManagement{} = client, data) do
     request_path = "config/auth"
     tesla_client = client.http_client
