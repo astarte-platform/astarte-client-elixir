@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2022 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,17 @@
 #
 
 defmodule Astarte.Client.Housekeeping.Realms do
+  @moduledoc """
+  Module to manage realms.
+  """
+  @moduledoc since: "0.1.0"
+
   alias Astarte.Client.{APIError, Housekeeping}
 
+  @doc """
+  Returns the list of all realms.
+  """
+  @doc since: "0.1.0"
   def list(%Housekeeping{} = client) do
     request_path = "realms"
     tesla_client = client.http_client
@@ -35,13 +44,41 @@ defmodule Astarte.Client.Housekeeping.Realms do
   @doc """
   Creates a new realm.
 
+  ## Options
+
+  One of `:datacenter_replication_factors` and `:replication_factor` options is required.
+
+    * `:datacenter_replication_factors` - uses `NetworkTopologyStrategy` replication strategy
+    and allows to define the number of replicas for each data center.
+    This option is mutually exclusive with `:replication_factor`,
+    if this option is used, `:replication_factor` will be ignored.
+
+    * `:replication_factor` - uses `SimpleStrategy` replication strategy
+    and allows to define the number of replicas for a single datacenter.
+    This option is mutually exclusive with `:datacenter_replication_factors`,
+    if the latter is used, this option will be ignored.
+
+    * `:query` - list of query params
+
+  ## Query options
+
+    * `:async_operation` - whether the operation should be carried out asynchronously
+    The possible values are:
+      * `true` (default)
+      * `false`
+
   ## Examples
 
-    Astarte.Client.Housekeeping.Realms.create(client, realm_name, public_key_pem)
+      Astarte.Client.Housekeeping.Realms.create(client, realm_name, public_key_pem,
+        replication_factor: 2)
 
-    Astarte.Client.Housekeeping.Realms.create(client, realm_name, public_key_pem, query: [async_operation: false])
+      Astarte.Client.Housekeeping.Realms.create(client, realm_name, public_key_pem,
+        replication_factor: 2,
+        query: [async_operation: false]
+      )
 
   """
+  @doc since: "0.1.0"
   def create(%Housekeeping{} = client, realm_name, public_key_pem, opts)
       when is_binary(realm_name) and is_binary(public_key_pem) and is_list(opts) do
     request_path = "realms"
@@ -110,6 +147,10 @@ defmodule Astarte.Client.Housekeeping.Realms do
     end
   end
 
+  @doc """
+  Returns a realm's configuration.
+  """
+  @doc since: "0.1.0"
   def get(%Housekeeping{} = client, realm_name) when is_binary(realm_name) do
     request_path = "realms/#{realm_name}"
     tesla_client = client.http_client
@@ -126,13 +167,25 @@ defmodule Astarte.Client.Housekeeping.Realms do
   @doc """
   Deletes a realm.
 
+  ## Options
+
+    * `:query` - list of query params
+
+  ## Query options
+
+    * `:async_operation` - whether the operation should be carried out asynchronously
+    The possible values are:
+      * `true` (default)
+      * `false`
+
   ## Examples
 
-    Astarte.Client.Housekeeping.Realms.delete(client, realm_name)
+      Astarte.Client.Housekeeping.Realms.delete(client, realm_name)
 
-    Astarte.Client.Housekeeping.Realms.delete(client, realm_name, query: [async_operation: false])
+      Astarte.Client.Housekeeping.Realms.delete(client, realm_name, query: [async_operation: false])
 
   """
+  @doc since: "0.1.0"
   def delete(%Housekeeping{} = client, realm_name, opts \\ []) when is_binary(realm_name) do
     request_path = "realms/#{realm_name}"
     tesla_client = client.http_client
