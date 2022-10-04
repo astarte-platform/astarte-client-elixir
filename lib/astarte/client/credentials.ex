@@ -17,16 +17,18 @@
 #
 
 defmodule Astarte.Client.Credentials do
-  @moduledoc false
+  @moduledoc """
+  This module simplifies generation of JWT from private key.
 
-  defstruct claims: %{},
-            expiry: nil,
-            issuer: nil,
-            subject: nil
+  It also allows to add granular authorization claims.
 
-  alias __MODULE__
+  Astarte Authentication and Authorization documentation https://docs.astarte-platform.org/latest/070-auth.html
+  """
+  @moduledoc since: "0.1.0"
 
   require Record
+
+  alias __MODULE__
 
   # Create an :ec_private_key record to easily extract the curve parameters from EC keys
   Record.defrecordp(
@@ -37,14 +39,55 @@ defmodule Astarte.Client.Credentials do
   @api_all_access_claim_value ".*::.*"
   @default_expiry 5 * 60
 
+  defstruct claims: %{},
+            expiry: nil,
+            issuer: nil,
+            subject: nil
+
+  @type t :: %__MODULE__{
+          claims: map,
+          expiry: pos_integer | :infinity,
+          issuer: binary | nil,
+          subject: binary | nil
+        }
+
+  @doc """
+  Returns `Astarte.Client.Credentials` struct.
+  """
+  @doc since: "0.1.0"
   def new do
     %Credentials{}
   end
 
+  @doc """
+  Returns regular expression that allows any operation.
+  """
+  @doc since: "0.1.0"
+  @spec api_all_access_claim_value() :: binary
   def api_all_access_claim_value do
     @api_all_access_claim_value
   end
 
+  @doc """
+  Returns configured `Astarte.Client.Credentials` struct having claims
+  that allows any operation on AppEngine, Realm Management, Pairing,
+  Flow APIs and Astarte Channels.
+
+  ## Options
+
+  The accepted options are:
+
+    * `:issuer`  - the "iss" (issuer) claim
+
+    * `:subject` - the "sub" (subject) claim
+
+    * `:expiry` - how to generate the "exp" (expiration time) claim. The possible values are:
+      * `:infinity` - do not add expiration time claim
+      * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+  """
+  @doc since: "0.1.0"
+  @spec dashboard_credentials(keyword) :: t
   def dashboard_credentials(opts \\ []) do
     expiry = Keyword.get(opts, :expiry, @default_expiry)
 
@@ -60,6 +103,25 @@ defmodule Astarte.Client.Credentials do
     |> set_expiry(expiry)
   end
 
+  @doc """
+  Returns configured `Astarte.Client.Credentials` struct having claims
+  that allows any operation on AppEngine API and Astarte Channels.
+
+  ## Options
+
+  The accepted options are:
+
+    * `:issuer`  - the "iss" (issuer) claim
+
+    * `:subject` - the "sub" (subject) claim
+
+    * `:expiry` - how to generate the "exp" (expiration time) claim. The possible values are:
+      * `:infinity` - do not add expiration time claim
+      * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+  """
+  @doc since: "0.1.0"
+  @spec appengine_all_access_credentials(keyword) :: t
   def appengine_all_access_credentials(opts \\ []) do
     expiry = Keyword.get(opts, :expiry, @default_expiry)
 
@@ -72,6 +134,25 @@ defmodule Astarte.Client.Credentials do
     |> set_expiry(expiry)
   end
 
+  @doc """
+  Returns configured `Astarte.Client.Credentials` struct having claims
+  that allows any operation on Pairing API.
+
+  ## Options
+
+  The accepted options are:
+
+    * `:issuer`  - the "iss" (issuer) claim
+
+    * `:subject` - the "sub" (subject) claim
+
+    * `:expiry` - how to generate the "exp" (expiration time) claim. The possible values are:
+      * `:infinity` - do not add expiration time claim
+      * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+  """
+  @doc since: "0.1.0"
+  @spec pairing_all_access_credentials(keyword) :: t
   def pairing_all_access_credentials(opts \\ []) do
     expiry = Keyword.get(opts, :expiry, @default_expiry)
 
@@ -82,6 +163,25 @@ defmodule Astarte.Client.Credentials do
     |> set_expiry(expiry)
   end
 
+  @doc """
+  Returns configured `Astarte.Client.Credentials` struct having claims
+  that allows any operation on Realm Management API.
+
+  ## Options
+
+  The accepted options are:
+
+    * `:issuer`  - the "iss" (issuer) claim
+
+    * `:subject` - the "sub" (subject) claim
+
+    * `:expiry` - how to generate the "exp" (expiration time) claim. The possible values are:
+      * `:infinity` - do not add expiration time claim
+      * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+  """
+  @doc since: "0.1.0"
+  @spec realm_management_all_access_credentials(keyword) :: t
   def realm_management_all_access_credentials(opts \\ []) do
     expiry = Keyword.get(opts, :expiry, @default_expiry)
 
@@ -92,6 +192,25 @@ defmodule Astarte.Client.Credentials do
     |> set_expiry(expiry)
   end
 
+  @doc """
+  Returns configured `Astarte.Client.Credentials` struct having claims
+  that allows any operation on Housekeeping API.
+
+  ## Options
+
+  The accepted options are:
+
+    * `:issuer`  - the "iss" (issuer) claim
+
+    * `:subject` - the "sub" (subject) claim
+
+    * `:expiry` - how to generate the "exp" (expiration time) claim. The possible values are:
+      * `:infinity` - do not add expiration time claim
+      * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+  """
+  @doc since: "0.1.0"
+  @spec housekeeping_all_access_credentials(keyword) :: t
   def housekeeping_all_access_credentials(opts \\ []) do
     expiry = Keyword.get(opts, :expiry, @default_expiry)
 
@@ -115,26 +234,56 @@ defmodule Astarte.Client.Credentials do
     |> set_expiry(expiry)
   end
 
+  @doc """
+  Appends claim for Housekeeping API
+  """
+  @doc since: "0.1.0"
+  @spec append_housekeeping_claim(t, binary) :: t
   def append_housekeeping_claim(%Credentials{} = credentials, claim) when is_binary(claim) do
     append_claim(credentials, "a_ha", claim)
   end
 
+  @doc """
+  Appends claim for Realm Management API
+  """
+  @doc since: "0.1.0"
+  @spec append_realm_management_claim(t, binary) :: t
   def append_realm_management_claim(%Credentials{} = credentials, claim) when is_binary(claim) do
     append_claim(credentials, "a_rma", claim)
   end
 
+  @doc """
+  Appends claim for Pairing API
+  """
+  @doc since: "0.1.0"
+  @spec append_pairing_claim(t, binary) :: t
   def append_pairing_claim(%Credentials{} = credentials, claim) when is_binary(claim) do
     append_claim(credentials, "a_pa", claim)
   end
 
+  @doc """
+  Appends claim for AppEngine API
+  """
+  @doc since: "0.1.0"
+  @spec append_appengine_claim(t, binary) :: t
   def append_appengine_claim(%Credentials{} = credentials, claim) when is_binary(claim) do
     append_claim(credentials, "a_aea", claim)
   end
 
+  @doc """
+  Appends claim for Astarte Channels
+  """
+  @doc since: "0.1.0"
+  @spec append_channels_claim(t, binary) :: t
   def append_channels_claim(%Credentials{} = credentials, claim) when is_binary(claim) do
     append_claim(credentials, "a_ch", claim)
   end
 
+  @doc """
+  Appends claim for Flow API
+  """
+  @doc since: "0.1.0"
+  @spec append_flow_claim(t, binary) :: t
   def append_flow_claim(%Credentials{} = credentials, claim) when is_binary(claim) do
     append_claim(credentials, "a_f", claim)
   end
@@ -143,6 +292,17 @@ defmodule Astarte.Client.Credentials do
     updated_claims = Map.update(claims, claim_key, [claim_value], &[claim_value | &1])
     %{credentials | claims: updated_claims}
   end
+
+  @doc """
+  Sets expiry used to generate expiration time claim.
+
+  The possible expiry values are:
+    * `:infinity` - do not add expiration time claim
+    * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+  """
+  @doc since: "0.1.0"
+  @spec set_expiry(t, expiry :: :infinity | pos_integer) :: t
 
   def set_expiry(%Credentials{} = credentials, :infinity) do
     %{credentials | expiry: :infinity}
@@ -153,6 +313,11 @@ defmodule Astarte.Client.Credentials do
     %{credentials | expiry: expiry_seconds}
   end
 
+  @doc """
+  Sets issuer claim
+  """
+  @doc since: "0.1.0"
+  @spec set_issuer(t, binary) :: t
   def set_issuer(%Credentials{} = credentials, issuer) when is_binary(issuer) do
     %{credentials | issuer: issuer}
   end
@@ -163,6 +328,11 @@ defmodule Astarte.Client.Credentials do
     set_issuer(credentials, issuer)
   end
 
+  @doc """
+  Sets subject claim
+  """
+  @doc since: "0.1.0"
+  @spec set_subject(t, binary) :: t
   def set_subject(%Credentials{} = credentials, subject) when is_binary(subject) do
     %{credentials | subject: subject}
   end
@@ -213,6 +383,11 @@ defmodule Astarte.Client.Credentials do
     Joken.Config.add_claim(config, "iat", fn -> Joken.current_time() end)
   end
 
+  @doc """
+  Generates JWT with given private key
+  """
+  @doc since: "0.1.0"
+  @spec to_jwt(t, binary) :: {:ok, binary} | {:error, any}
   def to_jwt(%Credentials{} = credentials, private_key_pem) do
     %Credentials{claims: astarte_claims} = credentials
     token_config = build_token_config(credentials)
