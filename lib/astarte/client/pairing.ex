@@ -31,7 +31,7 @@ defmodule Astarte.Client.Pairing do
   @spec new(String.t(), String.t(), Keyword.t()) :: {:ok, t()} | {:error, any}
   def new(base_api_url, realm_name, opts)
       when is_binary(base_api_url) and is_binary(realm_name) and is_list(opts) do
-    with {:ok, jwt} <- fetch_jwt(opts) do
+    with {:ok, jwt} <- fetch_or_generate_jwt(opts) do
       base_url = Path.join([base_api_url, "pairing", "v1", realm_name])
 
       middleware = [
@@ -45,20 +45,34 @@ defmodule Astarte.Client.Pairing do
     end
   end
 
-  defp fetch_jwt(opts) do
-    with :error <- Keyword.fetch(opts, :jwt) do
-      opts
-      |> Keyword.get(:private_key)
-      |> generate_jwt()
+  defp fetch_or_generate_jwt(opts) when is_list(opts) do
+    with {:error, :missing_jwt} <- fetch_jwt(opts),
+         {:error, :missing_private_key} <- generate_jwt(opts) do
+      {:error, :missing_jwt_and_private_key}
     end
   end
 
-  defp generate_jwt(nil = _private_key) do
-    {:error, :missing_jwt_and_private_key}
+  defp fetch_jwt(opts) when is_list(opts) do
+    case Keyword.fetch(opts, :jwt) do
+      {:ok, jwt} when is_binary(jwt) ->
+        {:ok, jwt}
+
+      :error ->
+        {:error, :missing_jwt}
+    end
   end
 
-  defp generate_jwt(private_key) when is_binary(private_key) do
-    Credentials.pairing_all_access_credentials(expiry: @jwt_expiry)
-    |> Credentials.to_jwt(private_key)
+  defp generate_jwt(opts) when is_list(opts) do
+    case Keyword.fetch(opts, :private_key) do
+      {:ok, private_key} when is_binary(private_key) ->
+        opts
+        |> Keyword.get(:jwt_opts, [])
+        |> Keyword.put_new(:expiry, @jwt_expiry)
+        |> Credentials.pairing_all_access_credentials()
+        |> Credentials.to_jwt(private_key)
+
+      :error ->
+        {:error, :missing_private_key}
+    end
   end
 end

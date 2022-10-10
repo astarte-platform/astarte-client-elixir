@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2022 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ defmodule Astarte.Client.Credentials do
   @moduledoc false
 
   defstruct claims: %{},
-            expiry: nil
+            expiry: nil,
+            issuer: nil,
+            subject: nil
 
   alias __MODULE__
 
@@ -53,6 +55,8 @@ defmodule Astarte.Client.Credentials do
     |> append_flow_claim(@api_all_access_claim_value)
     |> append_channels_claim("JOIN::.*")
     |> append_channels_claim("WATCH::.*")
+    |> maybe_set_issuer(opts[:issuer])
+    |> maybe_set_subject(opts[:subject])
     |> set_expiry(expiry)
   end
 
@@ -63,6 +67,8 @@ defmodule Astarte.Client.Credentials do
     |> append_appengine_claim(@api_all_access_claim_value)
     |> append_channels_claim("JOIN::.*")
     |> append_channels_claim("WATCH::.*")
+    |> maybe_set_issuer(opts[:issuer])
+    |> maybe_set_subject(opts[:subject])
     |> set_expiry(expiry)
   end
 
@@ -71,6 +77,8 @@ defmodule Astarte.Client.Credentials do
 
     Credentials.new()
     |> append_pairing_claim(@api_all_access_claim_value)
+    |> maybe_set_issuer(opts[:issuer])
+    |> maybe_set_subject(opts[:subject])
     |> set_expiry(expiry)
   end
 
@@ -79,6 +87,8 @@ defmodule Astarte.Client.Credentials do
 
     Credentials.new()
     |> append_realm_management_claim(@api_all_access_claim_value)
+    |> maybe_set_issuer(opts[:issuer])
+    |> maybe_set_subject(opts[:subject])
     |> set_expiry(expiry)
   end
 
@@ -87,6 +97,8 @@ defmodule Astarte.Client.Credentials do
 
     Credentials.new()
     |> append_housekeeping_claim(@api_all_access_claim_value)
+    |> maybe_set_issuer(opts[:issuer])
+    |> maybe_set_subject(opts[:subject])
     |> set_expiry(expiry)
   end
 
@@ -98,6 +110,8 @@ defmodule Astarte.Client.Credentials do
     |> append_realm_management_claim(@api_all_access_claim_value)
     |> append_pairing_claim(@api_all_access_claim_value)
     |> append_flow_claim(@api_all_access_claim_value)
+    |> maybe_set_issuer(opts[:issuer])
+    |> maybe_set_subject(opts[:subject])
     |> set_expiry(expiry)
   end
 
@@ -135,33 +149,77 @@ defmodule Astarte.Client.Credentials do
   end
 
   def set_expiry(%Credentials{} = credentials, expiry_seconds)
-      when is_integer(expiry_seconds) do
+      when is_integer(expiry_seconds) and expiry_seconds > 0 do
     %{credentials | expiry: expiry_seconds}
   end
 
-  def to_jwt(%Credentials{claims: astarte_claims, expiry: expiry}, private_key_pem) do
-    base_config =
-      %{}
-      |> Joken.Config.add_claim("iss", fn -> "Astarte Client" end)
-      |> Joken.Config.add_claim("iat", fn -> Joken.current_time() end)
+  def set_issuer(%Credentials{} = credentials, issuer) when is_binary(issuer) do
+    %{credentials | issuer: issuer}
+  end
 
-    config =
-      cond do
-        expiry == :infinity ->
-          base_config
+  defp maybe_set_issuer(%Credentials{} = credentials, nil), do: credentials
 
-        is_integer(expiry) and expiry > 0 ->
-          base_config
-          |> Joken.Config.add_claim("exp", fn -> Joken.current_time() + expiry end)
+  defp maybe_set_issuer(%Credentials{} = credentials, issuer) when is_binary(issuer) do
+    set_issuer(credentials, issuer)
+  end
 
-        true ->
-          base_config
-          |> Joken.Config.add_claim("exp", fn -> Joken.current_time() + @default_expiry end)
-      end
+  def set_subject(%Credentials{} = credentials, subject) when is_binary(subject) do
+    %{credentials | subject: subject}
+  end
+
+  defp maybe_set_subject(%Credentials{} = credentials, nil), do: credentials
+
+  defp maybe_set_subject(%Credentials{} = credentials, subject) when is_binary(subject) do
+    set_subject(credentials, subject)
+  end
+
+  defp build_token_config(%Credentials{} = credentials) do
+    %Credentials{issuer: issuer, subject: subject, expiry: expiry} = credentials
+
+    %{}
+    |> add_issuer_claim(issuer)
+    |> maybe_add_subject_claim(subject)
+    |> maybe_add_expiration_claim(expiry)
+    |> add_issued_at_claim()
+  end
+
+  defp add_issuer_claim(config, nil) do
+    Joken.Config.add_claim(config, "iss", fn ->
+      "Astarte Client Elixir v#{Application.spec(:astarte_client, :vsn)}"
+    end)
+  end
+
+  defp add_issuer_claim(config, issuer) when is_binary(issuer) do
+    Joken.Config.add_claim(config, "iss", fn -> issuer end)
+  end
+
+  defp maybe_add_subject_claim(config, nil), do: config
+
+  defp maybe_add_subject_claim(config, subject) when is_binary(subject) do
+    Joken.Config.add_claim(config, "sub", fn -> subject end)
+  end
+
+  defp maybe_add_expiration_claim(config, :infinity), do: config
+
+  defp maybe_add_expiration_claim(config, expiry) when is_integer(expiry) and expiry > 0 do
+    Joken.Config.add_claim(config, "exp", fn -> Joken.current_time() + expiry end)
+  end
+
+  defp maybe_add_expiration_claim(config, _) do
+    Joken.Config.add_claim(config, "exp", fn -> Joken.current_time() + @default_expiry end)
+  end
+
+  defp add_issued_at_claim(config) do
+    Joken.Config.add_claim(config, "iat", fn -> Joken.current_time() end)
+  end
+
+  def to_jwt(%Credentials{} = credentials, private_key_pem) do
+    %Credentials{claims: astarte_claims} = credentials
+    token_config = build_token_config(credentials)
 
     with {:ok, algo} <- signing_algorithm(private_key_pem),
          signer = Joken.Signer.create(algo, %{"pem" => private_key_pem}),
-         {:ok, token, _claims} <- Joken.generate_and_sign(config, astarte_claims, signer) do
+         {:ok, token, _claims} <- Joken.generate_and_sign(token_config, astarte_claims, signer) do
       {:ok, token}
     end
   end
