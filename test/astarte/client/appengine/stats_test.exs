@@ -18,7 +18,6 @@
 
 defmodule Astarte.Client.AppEngine.StatsTest do
   use ExUnit.Case
-  doctest Astarte.Client.AppEngine.Stats
 
   alias Astarte.Client.{APIError, AppEngine}
   alias Astarte.Client.AppEngine.Stats

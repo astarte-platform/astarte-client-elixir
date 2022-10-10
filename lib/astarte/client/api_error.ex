@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2022 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,14 @@
 #
 
 defmodule Astarte.Client.APIError do
+  @moduledoc """
+  A struct which represents an error which occurred during an Astarte API call.
+
+  This struct is designed to provide information needed to effectively log and maybe respond
+  to an error.
+  """
+  @moduledoc since: "0.1.0"
+
   @enforce_keys [:status, :response]
   defstruct @enforce_keys
 end

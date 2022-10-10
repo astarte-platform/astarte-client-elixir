@@ -17,8 +17,24 @@
 #
 
 defmodule Astarte.Client.RealmManagement.Triggers do
+  @moduledoc """
+  Module to manage triggers.
+
+  Astarte Triggers documentation https://docs.astarte-platform.org/latest/060-triggers.html
+  """
+  @moduledoc since: "0.1.0"
+
   alias Astarte.Client.{APIError, RealmManagement}
 
+  @doc """
+  Returns the list of all installed triggers.
+
+  ## Examples
+
+      Astarte.Client.RealmManagement.Triggers.list(client)
+
+  """
+  @doc since: "0.1.0"
   def list(%RealmManagement{} = client) do
     request_path = "triggers"
     tesla_client = client.http_client
@@ -32,6 +48,15 @@ defmodule Astarte.Client.RealmManagement.Triggers do
     end
   end
 
+  @doc """
+  Returns a previously installed trigger.
+
+  ## Examples
+
+      Astarte.Client.RealmManagement.Triggers.get(client, trigger_name)
+
+  """
+  @doc since: "0.1.0"
   def get(%RealmManagement{} = client, trigger_name) when is_binary(trigger_name) do
     request_path = "triggers/#{trigger_name}"
     tesla_client = client.http_client
@@ -45,6 +70,18 @@ defmodule Astarte.Client.RealmManagement.Triggers do
     end
   end
 
+  @doc """
+  Create a new trigger using provided configuration.
+
+  Trigger validation is performed before installation, if trigger configuration is not valid or
+  a trigger with the same name already exists an error is reported.
+
+  ## Examples
+
+      Astarte.Client.RealmManagement.Triggers.create(client, data)
+
+  """
+  @doc since: "0.1.0"
   def create(%RealmManagement{} = client, data) do
     request_path = "triggers"
     tesla_client = client.http_client
@@ -58,6 +95,15 @@ defmodule Astarte.Client.RealmManagement.Triggers do
     end
   end
 
+  @doc """
+  Deletes an existing trigger.
+
+  ## Examples
+
+      Astarte.Client.RealmManagement.Triggers.create(client, trigger_name)
+
+  """
+  @doc since: "0.1.0"
   def delete(%RealmManagement{} = client, trigger_name) when is_binary(trigger_name) do
     request_path = "triggers/#{trigger_name}"
     tesla_client = client.http_client

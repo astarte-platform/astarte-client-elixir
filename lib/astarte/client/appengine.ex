@@ -17,18 +17,69 @@
 #
 
 defmodule Astarte.Client.AppEngine do
+  @moduledoc """
+  Module to configure communication with Astarte AppEngine API.
+
+  Most applications would want to use AppEngine to interact with devices, stream and receive data, and oversee their fleet.
+  """
+  @moduledoc since: "0.1.0"
+
+  alias Astarte.Client.Credentials
+
+  @jwt_expiry 5 * 60
   @enforce_keys [:http_client]
+
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
           http_client: Tesla.Client.t()
         }
 
-  alias __MODULE__
-  alias Astarte.Client.Credentials
+  @doc """
+  Returns configured `Astarte.Client.AppEngine` struct.
 
-  @jwt_expiry 5 * 60
+  This function receives Astarte base API URL and name of the realm alongside authentication options
+  and returns configured `Astarte.Client.AppEngine` struct.
 
+  ## Options
+
+  One of `:jwt` and `:private_key` options is required.
+
+    * `:jwt` - JWT for Bearer authentication, if used `:private_key` and `:jwt_opts` are ignored
+
+    * `:private_key` - will be used to generate JWT, this option is mutually exclusive
+    with `:jwt`, if the latter is used, this option will be ignored.
+
+    * `:jwt_opts` - will add additional JWT claims to generated JWT, this option is mutually exclusive
+    with `:jwt`, if the latter is used, this option will be ignored.
+
+  ## JWT options
+
+  The accepted options for `:jwt_opts` are:
+
+    * `:issuer`  - the "iss" (issuer) claim
+
+    * `:subject` - the "sub" (subject) claim
+
+    * `:expiry` - how to generate the "exp" (expiration time) claim. The possible values are:
+      * `:infinity` - do not add expiration time claim
+      * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+
+  ## Examples
+
+      Astarte.Client.AppEngine.new("https://api.eu1.astarte.cloud", "myrealm", jwt: jwt)
+
+      Astarte.Client.AppEngine.new("https://api.eu1.astarte.cloud", "myrealm",
+        private_key: private_key)
+
+      Astarte.Client.AppEngine.new("https://api.eu1.astarte.cloud", "myrealm",
+        private_key: private_key,
+        jwt_opts: [issuer: "foo", subject: "bar", expiry: :infinity]
+      )
+
+  """
+  @doc since: "0.1.0"
   @spec new(String.t(), String.t(), Keyword.t()) :: {:ok, t()} | {:error, any}
   def new(base_api_url, realm_name, opts)
       when is_binary(base_api_url) and is_binary(realm_name) and is_list(opts) do
@@ -42,7 +93,7 @@ defmodule Astarte.Client.AppEngine do
       ]
 
       http_client = Tesla.client(middleware)
-      {:ok, %AppEngine{http_client: http_client}}
+      {:ok, %__MODULE__{http_client: http_client}}
     end
   end
 

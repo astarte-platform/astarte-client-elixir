@@ -17,8 +17,20 @@
 #
 
 defmodule Astarte.Client.Pairing.Agent do
+  @moduledoc """
+  This module allows to register and unregister devices.
+  """
+  @moduledoc since: "0.1.0"
+
   alias Astarte.Client.{APIError, Pairing}
 
+  @doc """
+  Register a device, obtaining its credentials secret.
+
+  The registration can be repeated as long as the device didn't request any credentials.
+  An optional initial introspection for the device can be passed in the registration request.
+  """
+  @doc since: "0.1.0"
   def register(%Pairing{} = client, data) when is_map(data) do
     request_path = "agent/devices"
     tesla_client = client.http_client
@@ -32,6 +44,13 @@ defmodule Astarte.Client.Pairing.Agent do
     end
   end
 
+  @doc """
+  Unregister a device.
+
+  This makes it possible to register it again, even if it already has requested its credentials.
+  All data belonging to the device will be kept as is.
+  """
+  @doc since: "0.1.0"
   def unregister(%Pairing{} = client, device_id) when is_binary(device_id) do
     request_path = "agent/devices/#{device_id}"
     tesla_client = client.http_client

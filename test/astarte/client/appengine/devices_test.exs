@@ -18,7 +18,6 @@
 
 defmodule Astarte.Client.AppEngine.DevicesTest do
   use ExUnit.Case
-  doctest Astarte.Client.AppEngine.Devices
 
   alias Astarte.Client.{APIError, AppEngine}
   alias Astarte.Client.AppEngine.Devices

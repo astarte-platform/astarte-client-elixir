@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2022 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,22 @@
 #
 
 defmodule Astarte.Client.AppEngine.Stats do
+  @moduledoc """
+  Module to retrieve devices stats
+  """
+  @moduledoc since: "0.1.0"
+
   alias Astarte.Client.{APIError, AppEngine}
 
+  @doc """
+  Returns stats regarding devices in a realm
+
+  ## Example
+
+      Astarte.Client.AppEngine.Stats.get_devices_stats(client)
+
+  """
+  @doc since: "0.1.0"
   def get_devices_stats(%AppEngine{} = client) do
     request_path = "stats/devices"
     tesla_client = client.http_client

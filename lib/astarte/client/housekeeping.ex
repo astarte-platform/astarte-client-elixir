@@ -17,18 +17,71 @@
 #
 
 defmodule Astarte.Client.Housekeeping do
+  @moduledoc """
+  Module to configure communication with Astarte Housekeeping API.
+
+  Housekeeping is the equivalent of a superadmin API.
+  It allows to manage and create realms, perform cluster-wide maintenance actions.
+  This API is usually accessible only to system administrators, and is not meant for the average user of Astarte,
+  which should refer to `Astarte.Client.RealmManagement` instead.
+  """
+  @moduledoc since: "0.1.0"
+
+  alias Astarte.Client.Credentials
+
+  @jwt_expiry 5 * 60
   @enforce_keys [:http_client]
+
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
           http_client: Tesla.Client.t()
         }
 
-  alias __MODULE__
-  alias Astarte.Client.Credentials
+  @doc """
+  Returns configured `Astarte.Client.Housekeeping` struct.
 
-  @jwt_expiry 5 * 60
+  This function receives Astarte base API URL alongside authentication options
+  and returns configured `Astarte.Client.Housekeeping` struct.
 
+  ## Options
+
+  One of `:jwt` and `:private_key` options is required.
+
+    * `:jwt` - JWT for Bearer authentication, if used `:private_key` and `:jwt_opts` are ignored
+
+    * `:private_key` - will be used to generate JWT, this option is mutually exclusive
+    with `:jwt`, if the latter is used, this option will be ignored.
+
+    * `:jwt_opts` - will add additional JWT claims to generated JWT, this option is mutually exclusive
+    with `:jwt`, if the latter is used, this option will be ignored.
+
+  ## JWT options
+
+  The accepted options for `:jwt_opts` are:
+
+    * `:issuer`  - the "iss" (issuer) claim
+
+    * `:subject` - the "sub" (subject) claim
+
+    * `:expiry` - how to generate the "exp" (expiration time) claim. The possible values are:
+      * `:infinity` - do not add expiration time claim
+      * `positive integer` - the amount of time in seconds to be added to the current time
+      at JWT generation moment
+
+  ## Examples
+
+      Astarte.Client.Housekeeping.new("https://api.eu1.astarte.cloud", jwt: jwt)
+
+      Astarte.Client.Housekeeping.new("https://api.eu1.astarte.cloud", private_key: private_key)
+
+      Astarte.Client.Housekeeping.new("https://api.eu1.astarte.cloud",
+        private_key: private_key,
+        jwt_opts: [issuer: "foo", subject: "bar", expiry: :infinity]
+      )
+
+  """
+  @doc since: "0.1.0"
   @spec new(String.t(), Keyword.t()) :: {:ok, t()} | {:error, any}
   def new(base_api_url, opts) when is_binary(base_api_url) and is_list(opts) do
     with {:ok, jwt} <- fetch_or_generate_jwt(opts) do
@@ -41,7 +94,7 @@ defmodule Astarte.Client.Housekeeping do
       ]
 
       http_client = Tesla.client(middleware)
-      {:ok, %Housekeeping{http_client: http_client}}
+      {:ok, %__MODULE__{http_client: http_client}}
     end
   end
 

@@ -18,7 +18,6 @@
 
 defmodule Astarte.Client.Housekeeping.RealmsTest do
   use ExUnit.Case
-  doctest Astarte.Client.Housekeeping.Realms
 
   alias Astarte.Client.Housekeeping.Realms
 

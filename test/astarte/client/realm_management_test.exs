@@ -18,7 +18,6 @@
 
 defmodule Astarte.Client.RealmManagementTest do
   use ExUnit.Case
-  doctest Astarte.Client.RealmManagement
 
   alias Astarte.Client.RealmManagement
   alias Astarte.Client.RealmManagement.RealmConfig
