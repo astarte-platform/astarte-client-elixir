@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2022 SECO Mind
+# Copyright 2022-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ defmodule Astarte.Client.RealmManagement.Triggers do
 
   def list(%RealmManagement{} = client) do
     request_path = "triggers"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -34,9 +34,9 @@ defmodule Astarte.Client.RealmManagement.Triggers do
 
   def get(%RealmManagement{} = client, trigger_name) when is_binary(trigger_name) do
     request_path = "triggers/#{trigger_name}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -47,9 +47,9 @@ defmodule Astarte.Client.RealmManagement.Triggers do
 
   def create(%RealmManagement{} = client, data) do
     request_path = "triggers"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
       if result.status == 201 do
         :ok
       else
@@ -60,9 +60,9 @@ defmodule Astarte.Client.RealmManagement.Triggers do
 
   def delete(%RealmManagement{} = client, trigger_name) when is_binary(trigger_name) do
     request_path = "triggers/#{trigger_name}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
       if result.status == 204 do
         :ok
       else

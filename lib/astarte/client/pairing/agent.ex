@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2022 SECO Mind
+# Copyright 2022-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ defmodule Astarte.Client.Pairing.Agent do
 
   def register(%Pairing{} = client, data) when is_map(data) do
     request_path = "agent/devices"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
+    with {:ok, tesla_client} <- Pairing.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
       if result.status == 201 do
         {:ok, result.body}
       else
@@ -34,9 +34,9 @@ defmodule Astarte.Client.Pairing.Agent do
 
   def unregister(%Pairing{} = client, device_id) when is_binary(device_id) do
     request_path = "agent/devices/#{device_id}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
+    with {:ok, tesla_client} <- Pairing.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
       if result.status == 204 do
         :ok
       else
