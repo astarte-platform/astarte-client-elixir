@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021-2022 SECO Mind
+# Copyright 2021-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,31 +17,46 @@
 #
 
 defmodule Astarte.Client.Housekeeping do
-  @enforce_keys [:http_client]
-  defstruct @enforce_keys
-
-  @type t :: %__MODULE__{
-          http_client: Tesla.Client.t()
-        }
-
-  alias __MODULE__
   alias Astarte.Client.Credentials
 
   @jwt_expiry 5 * 60
+  @enforce_keys [:base_url, :opts]
+
+  defstruct @enforce_keys
+
+  @type jwt_option :: {:issuer, binary} | {:subject, binary} | {:expiry, pos_integer | :infinity}
+  @type option :: {:jwt, binary} | {:private_key, binary} | {:jwt_opts, [jwt_option, ...]}
+  @type t :: %__MODULE__{
+          base_url: binary,
+          opts: [option, ...]
+        }
 
   @spec new(String.t(), Keyword.t()) :: {:ok, t()} | {:error, any}
   def new(base_api_url, opts) when is_binary(base_api_url) and is_list(opts) do
-    with {:ok, jwt} <- fetch_or_generate_jwt(opts) do
+    with {:ok, _jwt} <- fetch_or_generate_jwt(opts) do
       base_url = Path.join([base_api_url, "housekeeping", "v1"])
 
+      {:ok,
+       %__MODULE__{
+         base_url: base_url,
+         opts: opts
+       }}
+    end
+  end
+
+  @doc false
+  @spec fetch_tesla_client(t) :: {:ok, Tesla.Client.t()} | {:error, any}
+  def fetch_tesla_client(%__MODULE__{} = housekeeping_client) do
+    %__MODULE__{base_url: base_url, opts: opts} = housekeeping_client
+
+    with {:ok, jwt} <- fetch_or_generate_jwt(opts) do
       middleware = [
         {Tesla.Middleware.BaseUrl, base_url},
         Tesla.Middleware.JSON,
         {Tesla.Middleware.Headers, [{"Authorization", "Bearer: " <> jwt}]}
       ]
 
-      http_client = Tesla.client(middleware)
-      {:ok, %Housekeeping{http_client: http_client}}
+      {:ok, Tesla.client(middleware)}
     end
   end
 

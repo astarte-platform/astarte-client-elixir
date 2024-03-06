@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ defmodule Astarte.Client.AppEngine.Devices do
 
   def get_device_status(%AppEngine{} = client, device_id) when is_binary(device_id) do
     request_path = "devices/#{device_id}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -46,9 +46,9 @@ defmodule Astarte.Client.AppEngine.Devices do
 
   def get_device_interfaces(%AppEngine{} = client, device_id) do
     request_path = "devices/#{device_id}/interfaces"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -59,7 +59,6 @@ defmodule Astarte.Client.AppEngine.Devices do
 
   def get_properties_data(%AppEngine{} = client, device_id, interface, opts \\ [])
       when is_binary(device_id) and is_binary(interface) do
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
     request_path =
@@ -69,7 +68,8 @@ defmodule Astarte.Client.AppEngine.Devices do
         "devices/#{device_id}/interfaces/#{interface}"
       end
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path, query: query) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path, query: query) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -80,10 +80,10 @@ defmodule Astarte.Client.AppEngine.Devices do
 
   def set_property(%AppEngine{} = client, device_id, interface, path, data)
       when is_binary(device_id) and is_binary(interface) and is_binary(path) do
-    tesla_client = client.http_client
     request_path = "devices/#{device_id}/interfaces/#{interface}#{path}"
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.put(tesla_client, request_path, %{data: data}) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.put(tesla_client, request_path, %{data: data}) do
       if result.status == 200 do
         :ok
       else
@@ -94,10 +94,10 @@ defmodule Astarte.Client.AppEngine.Devices do
 
   def unset_property(%AppEngine{} = client, device_id, interface, path)
       when is_binary(device_id) and is_binary(interface) and is_binary(path) do
-    tesla_client = client.http_client
     request_path = "devices/#{device_id}/interfaces/#{interface}#{path}"
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
       if result.status == 204 do
         :ok
       else
@@ -108,7 +108,6 @@ defmodule Astarte.Client.AppEngine.Devices do
 
   def get_datastream_data(%AppEngine{} = client, device_id, interface, opts \\ [])
       when is_binary(device_id) and is_binary(interface) do
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
     request_path =
@@ -118,7 +117,8 @@ defmodule Astarte.Client.AppEngine.Devices do
         "devices/#{device_id}/interfaces/#{interface}"
       end
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path, query: query) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path, query: query) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -129,10 +129,10 @@ defmodule Astarte.Client.AppEngine.Devices do
 
   def send_datastream(%AppEngine{} = client, device_id, interface, path, data)
       when is_binary(device_id) and is_binary(interface) and is_binary(path) do
-    tesla_client = client.http_client
     request_path = "devices/#{device_id}/interfaces/#{interface}#{path}"
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, %{data: data}) do
       if result.status == 200 do
         :ok
       else

@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ defmodule Astarte.Client.Housekeeping.Realms do
 
   def list(%Housekeeping{} = client) do
     request_path = "realms"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- Housekeeping.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -45,7 +45,6 @@ defmodule Astarte.Client.Housekeeping.Realms do
   def create(%Housekeeping{} = client, realm_name, public_key_pem, opts)
       when is_binary(realm_name) and is_binary(public_key_pem) and is_list(opts) do
     request_path = "realms"
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
     data = %{
@@ -55,6 +54,7 @@ defmodule Astarte.Client.Housekeeping.Realms do
 
     with {:ok, replication_data} <- fetch_replication(opts),
          realm_data = Map.merge(data, replication_data),
+         {:ok, tesla_client} <- Housekeeping.fetch_tesla_client(client),
          {:ok, %Tesla.Env{} = result} <-
            Tesla.post(tesla_client, request_path, %{data: realm_data}, query: query) do
       if result.status == 201 do
@@ -112,9 +112,9 @@ defmodule Astarte.Client.Housekeeping.Realms do
 
   def get(%Housekeeping{} = client, realm_name) when is_binary(realm_name) do
     request_path = "realms/#{realm_name}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- Housekeeping.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -135,10 +135,10 @@ defmodule Astarte.Client.Housekeeping.Realms do
   """
   def delete(%Housekeeping{} = client, realm_name, opts \\ []) when is_binary(realm_name) do
     request_path = "realms/#{realm_name}"
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path, query: query) do
+    with {:ok, tesla_client} <- Housekeeping.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path, query: query) do
       if result.status == 204 do
         :ok
       else

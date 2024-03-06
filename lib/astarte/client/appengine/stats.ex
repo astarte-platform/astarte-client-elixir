@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ defmodule Astarte.Client.AppEngine.Stats do
 
   def get_devices_stats(%AppEngine{} = client) do
     request_path = "stats/devices"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else

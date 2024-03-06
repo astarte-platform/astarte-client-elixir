@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021,2022 SECO Mind
+# Copyright 2021-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ defmodule Astarte.Client.AppEngine.Groups do
 
   def list(%AppEngine{} = client) do
     request_path = "groups"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -36,10 +36,10 @@ defmodule Astarte.Client.AppEngine.Groups do
   def create(%AppEngine{} = client, group_name, devices)
       when is_binary(group_name) and is_list(devices) do
     request_path = "groups"
-    tesla_client = client.http_client
     body = %{data: %{group_name: group_name, devices: devices}}
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, body) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, body) do
       if result.status == 201 do
         :ok
       else
@@ -50,9 +50,9 @@ defmodule Astarte.Client.AppEngine.Groups do
 
   def get(%AppEngine{} = client, group_name) when is_binary(group_name) do
     request_path = "groups/#{group_name}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -77,10 +77,10 @@ defmodule Astarte.Client.AppEngine.Groups do
   def add_device(%AppEngine{} = client, group_name, device_id)
       when is_binary(group_name) and is_binary(device_id) do
     request_path = "groups/#{group_name}/devices"
-    tesla_client = client.http_client
     body = %{data: %{device_id: device_id}}
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, body) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.post(tesla_client, request_path, body) do
       if result.status == 201 do
         :ok
       else
@@ -92,9 +92,9 @@ defmodule Astarte.Client.AppEngine.Groups do
   def remove_device(%AppEngine{} = client, group_name, device_id)
       when is_binary(group_name) and is_binary(device_id) do
     request_path = "groups/#{group_name}/devices/#{device_id}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path) do
       if result.status == 204 do
         :ok
       else

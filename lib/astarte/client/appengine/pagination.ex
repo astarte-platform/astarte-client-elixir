@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2022 SECO Mind
+# Copyright 2022-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ defmodule Astarte.Client.AppEngine.Pagination do
   alias Astarte.Client.{APIError, AppEngine}
 
   def list(%AppEngine{} = client, request_path, opts \\ []) when is_binary(request_path) do
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
     list_data =
-      Stream.unfold({tesla_client, request_path, query}, &list_stream/1)
+      Stream.unfold({client, request_path, query}, &list_stream/1)
       |> Enum.to_list()
       |> List.flatten()
 
@@ -37,11 +36,12 @@ defmodule Astarte.Client.AppEngine.Pagination do
 
   defp list_stream(nil), do: nil
 
-  defp list_stream({tesla_client, request_path, query} = list_params) do
-    case Tesla.get(tesla_client, request_path, query: query) do
-      {:ok, %Tesla.Env{status: 200, body: body}} ->
-        process_list_response(body, list_params)
-
+  defp list_stream({%AppEngine{} = client, request_path, query} = list_params) do
+    with {:ok, tesla_client} <- AppEngine.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{status: 200, body: body}} <-
+           Tesla.get(tesla_client, request_path, query: query) do
+      process_list_response(body, list_params)
+    else
       {:ok, %Tesla.Env{status: status, body: body}} ->
         {{:error, %APIError{status: status, response: body}}, nil}
 
@@ -54,11 +54,11 @@ defmodule Astarte.Client.AppEngine.Pagination do
     {entity_list, next_list_params(body, list_params)}
   end
 
-  defp next_list_params(body, {tesla_client, request_path, query}) do
+  defp next_list_params(body, {client, request_path, query}) do
     with {:ok, links} <- links(body),
          {:ok, link} <- next_link(links),
          token when not is_nil(token) <- next_token(link) do
-      {tesla_client, request_path, Keyword.put(query, :from_token, token)}
+      {client, request_path, Keyword.put(query, :from_token, token)}
     else
       _ -> nil
     end
