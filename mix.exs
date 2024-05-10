@@ -34,7 +34,7 @@ defmodule Astarte.Client.MixProject do
       {:jason, "~> 1.0"},
       {:joken, "~> 2.4"},
       {:x509, "~> 0.8"},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test}
     ]
   end
