@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2024 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,10 +47,12 @@ defmodule Astarte.Client.Housekeeping.Realms do
     request_path = "realms"
     tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
+    device_registration_limit = Keyword.get(opts, :device_registration_limit)
 
     data = %{
       realm_name: realm_name,
-      jwt_public_key_pem: public_key_pem
+      jwt_public_key_pem: public_key_pem,
+      device_registration_limit: device_registration_limit
     }
 
     with {:ok, replication_data} <- fetch_replication(opts),
