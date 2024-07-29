@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2022 SECO Mind
+# Copyright 2022-2023 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
 
   def list(%RealmManagement{} = client) do
     request_path = "interfaces"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -35,9 +35,9 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
   def list_major_versions(%RealmManagement{} = client, interface_name)
       when is_binary(interface_name) do
     request_path = "interfaces/#{interface_name}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -49,9 +49,9 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
   def get(%RealmManagement{} = client, interface_name, major_version)
       when is_binary(interface_name) and is_integer(major_version) do
     request_path = "interfaces/#{interface_name}/#{major_version}"
-    tesla_client = client.http_client
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
       else
@@ -62,10 +62,10 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
 
   def create(%RealmManagement{} = client, data, opts \\ []) do
     request_path = "interfaces"
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <-
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <-
            Tesla.post(tesla_client, request_path, %{data: data}, query: query) do
       if result.status == 201 do
         :ok
@@ -78,10 +78,10 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
   def update(%RealmManagement{} = client, interface_name, major_version, data, opts \\ [])
       when is_binary(interface_name) and is_integer(major_version) do
     request_path = "interfaces/#{interface_name}/#{major_version}"
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <-
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <-
            Tesla.put(tesla_client, request_path, %{data: data}, query: query) do
       if result.status == 204 do
         :ok
@@ -94,10 +94,10 @@ defmodule Astarte.Client.RealmManagement.Interfaces do
   def delete(%RealmManagement{} = client, interface_name, major_version, opts \\ [])
       when is_binary(interface_name) and is_integer(major_version) do
     request_path = "interfaces/#{interface_name}/#{major_version}"
-    tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
 
-    with {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path, query: query) do
+    with {:ok, tesla_client} <- RealmManagement.fetch_tesla_client(client),
+         {:ok, %Tesla.Env{} = result} <- Tesla.delete(tesla_client, request_path, query: query) do
       if result.status == 204 do
         :ok
       else
