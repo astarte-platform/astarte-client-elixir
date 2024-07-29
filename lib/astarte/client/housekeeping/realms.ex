@@ -126,6 +126,40 @@ defmodule Astarte.Client.Housekeeping.Realms do
   end
 
   @doc """
+  Updates a realm.
+
+  ## Examples
+
+    Astarte.Client.Housekeeping.Realms.update(client, realm_name, [jwt_public_key_pem: "..."])
+
+    Astarte.Client.Housekeeping.Realms.update(client, realm_name, [device_registration_limit: 100])
+
+  """
+  def update(%Housekeeping{} = client, realm_name, opts)
+      when is_binary(realm_name) and is_list(opts) do
+    request_path = "realms/#{realm_name}"
+    tesla_client = client.http_client
+
+    realm_data =
+      [:jwt_public_key_pem, :device_registration_limit]
+      |> Enum.reduce(%{}, fn key, acc ->
+        case Keyword.fetch(opts, key) do
+          {:ok, value} -> Map.put(acc, key, value)
+          :error -> acc
+        end
+      end)
+
+    with {:ok, %Tesla.Env{} = result} <-
+           Tesla.patch(tesla_client, request_path, %{data: realm_data}) do
+      if result.status == 200 do
+        :ok
+      else
+        {:error, %APIError{status: result.status, response: result.body}}
+      end
+    end
+  end
+
+  @doc """
   Deletes a realm.
 
   ## Examples
