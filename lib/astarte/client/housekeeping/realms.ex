@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2021 SECO Mind
+# Copyright 2021-2024 SECO Mind
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,10 +47,12 @@ defmodule Astarte.Client.Housekeeping.Realms do
     request_path = "realms"
     tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
+    device_registration_limit = Keyword.get(opts, :device_registration_limit)
 
     data = %{
       realm_name: realm_name,
-      jwt_public_key_pem: public_key_pem
+      jwt_public_key_pem: public_key_pem,
+      device_registration_limit: device_registration_limit
     }
 
     with {:ok, replication_data} <- fetch_replication(opts),
@@ -117,6 +119,40 @@ defmodule Astarte.Client.Housekeeping.Realms do
     with {:ok, %Tesla.Env{} = result} <- Tesla.get(tesla_client, request_path) do
       if result.status == 200 do
         {:ok, result.body}
+      else
+        {:error, %APIError{status: result.status, response: result.body}}
+      end
+    end
+  end
+
+  @doc """
+  Updates a realm.
+
+  ## Examples
+
+    Astarte.Client.Housekeeping.Realms.update(client, realm_name, [jwt_public_key_pem: "..."])
+
+    Astarte.Client.Housekeeping.Realms.update(client, realm_name, [device_registration_limit: 100])
+
+  """
+  def update(%Housekeeping{} = client, realm_name, opts)
+      when is_binary(realm_name) and is_list(opts) do
+    request_path = "realms/#{realm_name}"
+    tesla_client = client.http_client
+
+    realm_data =
+      [:jwt_public_key_pem, :device_registration_limit]
+      |> Enum.reduce(%{}, fn key, acc ->
+        case Keyword.fetch(opts, key) do
+          {:ok, value} -> Map.put(acc, key, value)
+          :error -> acc
+        end
+      end)
+
+    with {:ok, %Tesla.Env{} = result} <-
+           Tesla.patch(tesla_client, request_path, %{data: realm_data}) do
+      if result.status == 200 do
+        :ok
       else
         {:error, %APIError{status: result.status, response: result.body}}
       end
