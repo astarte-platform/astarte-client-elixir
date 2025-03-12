@@ -140,4 +140,22 @@ defmodule Astarte.Client.AppEngine.Devices do
       end
     end
   end
+
+  @doc """
+  Update a writable property of a device.
+  """
+  def update_device_writeable_property(%AppEngine{} = client, device_id, data) do
+    tesla_client = client.http_client
+    request_path = "devices/#{device_id}"
+    headers = [{"content-type", "application/merge-patch+json"}]
+
+    with {:ok, %Tesla.Env{} = result} <-
+           Tesla.patch(tesla_client, request_path, %{data: data}, headers: headers) do
+      if result.status == 200 do
+        {:ok, result.body}
+      else
+        {:error, %APIError{status: result.status, response: result.body}}
+      end
+    end
+  end
 end

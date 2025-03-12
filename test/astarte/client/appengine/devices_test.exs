@@ -62,6 +62,8 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
     "#{@sensor_path}" => @sensor_stream_data
   }
 
+  @property_data %{property: "value"}
+
   setup do
     {:ok, %AppEngine{} = client} = AppEngine.new(@base_url, @realm_name, jwt: @jwt)
 
@@ -598,6 +600,35 @@ defmodule Astarte.Client.AppEngine.DevicesTest do
       end)
 
       Devices.send_datastream(client, @device_id, @sensors_interface, @sensor_path, data)
+    end
+  end
+
+  describe "update_device_writeable_property/2" do
+    test "returns :ok when the response status is 200", %{client: client} do
+      Tesla.Mock.mock(fn %{method: method, url: url} ->
+        assert method == :patch
+        assert url == build_device_url(@device_id)
+
+        Tesla.Mock.json(
+          %{"data" => @property_data},
+          status: 200
+        )
+      end)
+
+      assert {:ok, %{"data" => %{"property" => @property_data.property}}} ==
+               Devices.update_device_writeable_property(client, @device_id, @property_data)
+    end
+
+    test "returns an error tuple when the response status is not 200", %{client: client} do
+      error_data = %{"errors" => %{"detail" => "Bad Request"}}
+      error_status = 400
+
+      Tesla.Mock.mock(fn _ ->
+        Tesla.Mock.json(error_data, status: error_status)
+      end)
+
+      assert assert {:error, %APIError{response: error_data, status: error_status}} ==
+                      Devices.update_device_writeable_property(client, @device_id, @property_data)
     end
   end
 
