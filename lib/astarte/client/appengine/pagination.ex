@@ -23,9 +23,18 @@ defmodule Astarte.Client.AppEngine.Pagination do
   def list(%AppEngine{} = client, request_path, opts \\ []) when is_binary(request_path) do
     tesla_client = client.http_client
     query = Keyword.get(opts, :query, [])
+    stream? = Keyword.get(opts, :stream, false)
 
+    {tesla_client, request_path, query}
+    |> Stream.unfold(&list_stream/1)
+    |> maybe_consume(stream?)
+  end
+
+  defp maybe_consume(stream, true), do: stream
+
+  defp maybe_consume(stream, false) do
     list_data =
-      Stream.unfold({tesla_client, request_path, query}, &list_stream/1)
+      stream
       |> Enum.to_list()
       |> List.flatten()
 
