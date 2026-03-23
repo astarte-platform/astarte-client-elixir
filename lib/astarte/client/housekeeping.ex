@@ -33,12 +33,15 @@ defmodule Astarte.Client.Housekeeping do
   def new(base_api_url, opts) when is_binary(base_api_url) and is_list(opts) do
     with {:ok, jwt} <- fetch_or_generate_jwt(opts) do
       base_url = Path.join([base_api_url, "housekeeping", "v1"])
+      extra_middleware = Keyword.get(opts, :extra_middleware, [])
 
-      middleware = [
-        {Tesla.Middleware.BaseUrl, base_url},
-        Tesla.Middleware.JSON,
-        {Tesla.Middleware.Headers, [{"Authorization", "Bearer: " <> jwt}]}
-      ]
+      middleware =
+        extra_middleware ++
+          [
+            {Tesla.Middleware.BaseUrl, base_url},
+            Tesla.Middleware.JSON,
+            {Tesla.Middleware.Headers, [{"Authorization", "Bearer: " <> jwt}]}
+          ]
 
       http_client = Tesla.client(middleware)
       {:ok, %Housekeeping{http_client: http_client}}

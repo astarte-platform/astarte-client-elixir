@@ -33,12 +33,15 @@ defmodule Astarte.Client.Pairing do
       when is_binary(base_api_url) and is_binary(realm_name) and is_list(opts) do
     with {:ok, jwt} <- fetch_or_generate_jwt(opts) do
       base_url = Path.join([base_api_url, "pairing", "v1", realm_name])
+      extra_middleware = Keyword.get(opts, :extra_middleware, [])
 
-      middleware = [
-        {Tesla.Middleware.BaseUrl, base_url},
-        Tesla.Middleware.JSON,
-        {Tesla.Middleware.Headers, [{"Authorization", "Bearer: " <> jwt}]}
-      ]
+      middleware =
+        extra_middleware ++
+          [
+            {Tesla.Middleware.BaseUrl, base_url},
+            Tesla.Middleware.JSON,
+            {Tesla.Middleware.Headers, [{"Authorization", "Bearer: " <> jwt}]}
+          ]
 
       http_client = Tesla.client(middleware)
       {:ok, %__MODULE__{http_client: http_client}}
