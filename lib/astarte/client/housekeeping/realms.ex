@@ -49,10 +49,14 @@ defmodule Astarte.Client.Housekeeping.Realms do
     query = Keyword.get(opts, :query, [])
     device_registration_limit = Keyword.get(opts, :device_registration_limit)
 
+    datastream_maximum_storage_retention =
+      Keyword.get(opts, :datastream_maximum_storage_retention)
+
     data = %{
       realm_name: realm_name,
       jwt_public_key_pem: public_key_pem,
-      device_registration_limit: device_registration_limit
+      device_registration_limit: device_registration_limit,
+      datastream_maximum_storage_retention: datastream_maximum_storage_retention
     }
 
     with {:ok, replication_data} <- fetch_replication(opts),
@@ -141,7 +145,7 @@ defmodule Astarte.Client.Housekeeping.Realms do
     tesla_client = client.http_client
 
     realm_data =
-      [:jwt_public_key_pem, :device_registration_limit]
+      [:jwt_public_key_pem, :device_registration_limit, :datastream_maximum_storage_retention]
       |> Enum.reduce(%{}, fn key, acc ->
         case Keyword.fetch(opts, key) do
           {:ok, value} -> Map.put(acc, key, value)

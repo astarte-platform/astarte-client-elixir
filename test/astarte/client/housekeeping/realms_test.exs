@@ -248,6 +248,64 @@ defmodule Astarte.Client.Housekeeping.RealmsTest do
       assert :ok = Realms.create(client, @realm_name, @realm_public_key, replication_factor: 1)
     end
 
+    test "specifies integer datastream maximum storage retention", %{client: client} do
+      opts = [datastream_maximum_storage_retention: 1]
+
+      Tesla.Mock.mock(fn %{body: body} ->
+        assert %{
+                 "data" => %{
+                   "datastream_maximum_storage_retention" => 1
+                 }
+               } = Jason.decode!(body)
+
+        Tesla.Mock.json(realm_response(), status: 201)
+      end)
+
+      assert :ok =
+               Realms.create(
+                 client,
+                 @realm_name,
+                 @realm_public_key,
+                 [replication_factor: 1] ++ opts
+               )
+    end
+
+    test "specifies nil datastream maximum storage retention", %{client: client} do
+      opts = [datastream_maximum_storage_retention: nil]
+
+      Tesla.Mock.mock(fn %{body: body} ->
+        assert %{
+                 "data" => %{
+                   "datastream_maximum_storage_retention" => nil
+                 }
+               } = Jason.decode!(body)
+
+        Tesla.Mock.json(realm_response(), status: 201)
+      end)
+
+      assert :ok =
+               Realms.create(
+                 client,
+                 @realm_name,
+                 @realm_public_key,
+                 [replication_factor: 1] ++ opts
+               )
+    end
+
+    test "specifies nil without a defined datastream maximum storage retention", %{client: client} do
+      Tesla.Mock.mock(fn %{body: body} ->
+        assert %{
+                 "data" => %{
+                   "datastream_maximum_storage_retention" => nil
+                 }
+               } = Jason.decode!(body)
+
+        Tesla.Mock.json(realm_response(), status: 201)
+      end)
+
+      assert :ok = Realms.create(client, @realm_name, @realm_public_key, replication_factor: 1)
+    end
+
     test "specifies replication with simple strategy", %{client: client} do
       opts = [replication_factor: 1]
 
@@ -380,6 +438,55 @@ defmodule Astarte.Client.Housekeeping.RealmsTest do
       assert :ok = Realms.update(client, @realm_name, [])
     end
 
+    test "specifies integer datastream maximum storage retention", %{client: client} do
+      datastream_maximum_storage_retention = 1
+
+      Tesla.Mock.mock(fn %{body: body} ->
+        assert %{
+                 "data" => %{
+                   "datastream_maximum_storage_retention" => ^datastream_maximum_storage_retention
+                 }
+               } = Jason.decode!(body)
+
+        Tesla.Mock.json(realm_response(), status: 200)
+      end)
+
+      assert :ok =
+               Realms.update(client, @realm_name,
+                 datastream_maximum_storage_retention: datastream_maximum_storage_retention
+               )
+    end
+
+    test "specifies nil datastream maximum storage retention", %{client: client} do
+      datastream_maximum_storage_retention = nil
+
+      Tesla.Mock.mock(fn %{body: body} ->
+        assert %{
+                 "data" => %{
+                   "datastream_maximum_storage_retention" => ^datastream_maximum_storage_retention
+                 }
+               } = Jason.decode!(body)
+
+        Tesla.Mock.json(realm_response(), status: 200)
+      end)
+
+      assert :ok =
+               Realms.update(client, @realm_name,
+                 datastream_maximum_storage_retention: datastream_maximum_storage_retention
+               )
+    end
+
+    test "does not specify datastream maximum storage retention if undefined", %{client: client} do
+      Tesla.Mock.mock(fn %{body: body} ->
+        assert %{"data" => data} = Jason.decode!(body)
+        refute Map.has_key?(data, "datastream_maximum_storage_retention")
+
+        Tesla.Mock.json(realm_response(), status: 200)
+      end)
+
+      assert :ok = Realms.update(client, @realm_name, [])
+    end
+
     test "retuns APIError on error", %{client: client} do
       error_data = %{"errors" => %{"detail" => "Forbidden"}}
       error_status = 403
@@ -500,7 +607,7 @@ defmodule Astarte.Client.Housekeeping.RealmsTest do
     %{
       "data" =>
         %{
-          "datastream_maximum_storage_retention" => nil,
+          "datastream_maximum_storage_retention" => opts[:datastream_maximum_storage_retention],
           "device_registration_limit" => opts[:device_registration_limit],
           "jwt_public_key_pem" => opts[:jwt_public_key_pem] || @realm_public_key,
           "realm_name" => opts[:realm_name] || @realm_name
